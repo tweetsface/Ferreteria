@@ -6,6 +6,7 @@ use App\Models\Producto;
 use App\Models\Categoria;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use DB;
 
 class ProductoController extends Controller
 {
@@ -40,45 +41,65 @@ class ProductoController extends Controller
     /**
      * Guardar nuevo producto
      */
-    public function store(Request $request)
-    {
-        $request->validate([
-            'codigo'        => 'required|unique:productos,codigo',
-            'nombre'        => 'required|string|max:255',
-            'id_categoria'  => 'nullable|exists:categorias,id_categoria',
-            'costo'         => 'nullable|numeric|min:0',
-            'precio'        => 'required|numeric|min:0',
-            'unidad'        => 'required|string|max:50',
-            'marca'         => 'nullable|string|max:100',
-            'descripcion'   => 'nullable|string',
-            'imagen'        => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'activo'        => 'nullable|boolean',
-        ]);
+public function store(Request $request)
+{
+    $request->validate([
+        'codigo'        => 'required|unique:productos,codigo',
+        'nombre'        => 'required|string|max:255',
+        'id_categoria'  => 'nullable|exists:categorias,id_categoria',
+        'costo'         => 'required|numeric|min:0',
+        'precio_venta'  => 'required|numeric|min:0',
+        'unidad'        => 'required|string|max:50',
+        'marca'         => 'nullable|string|max:100',
+        'descripcion'   => 'nullable|string',
+        'imagen'        => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        'activo'        => 'nullable|boolean',
+    ]);
 
-        $rutaImagen = null;
+    // 🔥 Obtener IVA desde configuración
+    $iva = DB::table('configuraciones')
+                ->where('clave', 'iva')
+                ->value('valor') ?? 16;
 
-        if ($request->hasFile('imagen')) {
-            $rutaImagen = $request->file('imagen')->store('productos', 'public');
-        }
+    $costo = $request->costo;
+    $precioVenta = $request->precio_venta;
 
-        Producto::create([
-            'codigo'        => $request->codigo,
-            'nombre'        => $request->nombre,
-            'id_categoria'  => $request->id_categoria,
-            'costo'         => $request->costo,
-            'precio'        => $request->precio,
-            'unidad'        => $request->unidad,
-            'marca'         => $request->marca,
-            'descripcion'   => $request->descripcion,
-            'imagen'        => $rutaImagen,
-            'activo'        => $request->activo ?? true,
-        ]);
+    // 🔹 Calcular precio sin IVA
+    $precioBase = $precioVenta / (1 + ($iva / 100));
 
-        return redirect()
-            ->route('producto.index')
-            ->with('success', 'Producto registrado correctamente.');
+    // 🔹 Calcular utilidad real
+    $utilidad = $precioBase - $costo;
+
+    // 🔹 Calcular margen %
+    $margen = $costo > 0 
+        ? ($utilidad / $costo) * 100 
+        : 0;
+
+    $rutaImagen = null;
+
+    if ($request->hasFile('imagen')) {
+        $rutaImagen = $request->file('imagen')
+                              ->store('productos', 'public');
     }
 
+    Producto::create([
+        'codigo'        => $request->codigo,
+        'nombre'        => $request->nombre,
+        'id_categoria'  => $request->id_categoria,
+        'costo'         => $costo,
+        'precio_base'   => round($precioBase, 2),
+        'precio_venta'  => round($precioVenta, 2),
+        'unidad'        => $request->unidad,
+        'marca'         => $request->marca,
+        'descripcion'   => $request->descripcion,
+        'imagen'        => $rutaImagen,
+        'activo'        => $request->activo ?? true,
+    ]);
+
+    return redirect()
+        ->route('producto.index')
+        ->with('success', 'Producto registrado correctamente.');
+}
     /**
      * Mostrar formulario edición
      */
@@ -90,51 +111,66 @@ class ProductoController extends Controller
         return view('productos_edit', compact('producto', 'categorias'));
     }
 
-    /**
-     * Actualizar producto
-     */
-    public function update(Request $request, $id)
-    
-    {
-        $producto = Producto::findOrFail($id);
-        $request->validate([
-            'nombre'        => 'nullable|string|max:255',
-            'id_categoria'  => 'nullable|exists:categorias,id_categoria',
-            'costo'         => 'nullable|numeric|min:0',
-            'precio'        => 'nullable|numeric|min:0',
-            'unidad'        => 'nullable|string|max:50',
-            'marca'         => 'nullable|string|max:100',
-            'descripcion'   => 'nullable|string',
-            'imagen'        => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'activo'        => 'nullable|boolean',
-        ]);
 
-        if ($request->hasFile('imagen')) {
+public function update(Request $request, $id)
+{
+    $producto = Producto::findOrFail($id);
 
-            // Eliminar imagen anterior si existe
-            if ($producto->imagen && Storage::disk('public')->exists($producto->imagen)) {
-                Storage::disk('public')->delete($producto->imagen);
-            }
+    $request->validate([
+        'nombre'        => 'nullable|string|max:255',
+        'id_categoria'  => 'nullable|exists:categorias,id_categoria',
+        'costo'         => 'nullable|numeric|min:0',
+        'precio_venta'  => 'nullable|numeric|min:0',
+        'unidad'        => 'nullable|string|max:50',
+        'marca'         => 'nullable|string|max:100',
+        'descripcion'   => 'nullable|string',
+        'imagen'        => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+        'activo'        => 'nullable|boolean',
+    ]);
 
-            $producto->imagen = $request->file('imagen')->store('productos', 'public');
-        }
+    // 🔥 Obtener IVA desde BD
+    $iva = DB::table('configuraciones')
+                ->where('clave', 'iva')
+                ->value('valor') ?? 16;
 
-        $producto->update([
-            'nombre'        => $request->nombre,
-            'id_categoria'  => $request->id_categoria,
-            'costo'         => $request->costo,
-            'precio'        => $request->precio,
-            'unidad'        => $request->unidad,
-            'marca'         => $request->marca,
-            'descripcion'   => $request->descripcion,
-            'activo'        => $request->activo ?? true,
-        ]);
+    // 🔹 Preparar arreglo de actualización
+    $data = [
+        'nombre'        => $request->nombre ?? $producto->nombre,
+        'id_categoria'  => $request->id_categoria ?? $producto->id_categoria,
+        'costo'         => $request->costo ?? $producto->costo,
+        'unidad'        => $request->unidad ?? $producto->unidad,
+        'marca'         => $request->marca ?? $producto->marca,
+        'descripcion'   => $request->descripcion ?? $producto->descripcion,
+        'activo'        => $request->activo ?? $producto->activo,
+    ];
 
-        return redirect()
-            ->route('producto.index')
-            ->with('success', 'Producto actualizado correctamente.');
+    // 🔹 Si cambian precio venta → recalcular base
+    if ($request->filled('precio_venta')) {
+
+        $precioVenta = $request->precio_venta;
+        $precioBase  = $precioVenta / (1 + ($iva / 100));
+
+        $data['precio_venta'] = round($precioVenta, 2);
+        $data['precio_base']  = round($precioBase, 2);
     }
 
+    // 🔹 Imagen nueva
+    if ($request->hasFile('imagen')) {
+
+        if ($producto->imagen && Storage::disk('public')->exists($producto->imagen)) {
+            Storage::disk('public')->delete($producto->imagen);
+        }
+
+        $data['imagen'] = $request->file('imagen')->store('productos', 'public');
+    }
+
+    // 🔥 Actualizar todo junto
+    $producto->update($data);
+
+    return redirect()
+        ->route('producto.index')
+        ->with('success', 'Producto actualizado correctamente.');
+}
     /**
      * Eliminar producto
      */

@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('email')->unique();
 
             $table->unsignedBigInteger('id_sucursal')->nullable();
+            $table->string('rol')->default(0);
 
             $table->boolean('activo')->default(true);
 

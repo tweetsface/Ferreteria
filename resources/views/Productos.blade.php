@@ -73,8 +73,15 @@ class="bg-white p-6 rounded-xl shadow border border-gray-200 mb-8 grid grid-cols
 </div>
 
 <div>
-<label class="block mb-1 font-semibold">Precio</label>
-<input type="number" step="0.01" name="precio" class="w-full border rounded px-4 py-2" required />
+<label class="block mb-1 font-semibold">
+Precio de Venta
+<span class="text-xs text-gray-400">(Incluye IVA)</span>
+</label>
+<input type="number"
+step="0.01"
+name="precio_venta"
+class="w-full border rounded px-4 py-2"
+required />
 </div>
 
 <div>
@@ -191,7 +198,7 @@ class="w-48 h-48 object-cover rounded-xl shadow-2xl border bg-white p-1">
 <td class="p-2">{{ $producto->codigo }}</td>
 <td class="p-2">{{ $producto->nombre }}</td>
 <td class="p-2">{{ $producto->categoria->nombre ?? 'Sin categoría' }}</td>
-<td class="p-2">${{ number_format($producto->precio,2) }}</td>
+<td class="p-2">${{ number_format($producto->precio_venta,2) }}</td>
 <td class="p-2">{{ $producto->unidad }}</td>
 <td class="p-2 text-center">
 @if($producto->activo)
@@ -209,7 +216,7 @@ onclick="abrirModalEditar(
 '{{ $producto->id_categoria }}',
 '{{ $producto->marca }}',
 '{{ $producto->costo }}',
-'{{ $producto->precio }}',
+'{{ $producto->precio_venta }}',
 '{{ $producto->unidad }}',
 `{{ $producto->descripcion }}`,
 '{{ $producto->activo }}'
@@ -282,7 +289,7 @@ class="w-full border rounded px-3 py-2">
 
 <div>
 <label class="text-sm font-semibold">Precio</label>
-<input type="number" step="0.01" name="precio" id="edit_precio"
+<input type="number" step="0.01" name="precio_venta" id="edit_precio_venta"
 class="w-full border rounded px-3 py-2">
 </div>
 
@@ -352,7 +359,7 @@ document.getElementById('edit_nombre').value=nombre;
 document.getElementById('edit_categoria').value=categoria;
 document.getElementById('edit_marca').value=marca;
 document.getElementById('edit_costo').value=costo;
-document.getElementById('edit_precio').value=precio;
+document.getElementById('edit_precio_venta').value=precio;
 document.getElementById('edit_unidad').value=unidad;
 document.getElementById('edit_descripcion').value=descripcion;
 document.getElementById('edit_activo').value=activo;

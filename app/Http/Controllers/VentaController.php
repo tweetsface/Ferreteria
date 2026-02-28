@@ -12,6 +12,7 @@ use App\Models\Categoria;
 use App\Models\Venta;
 use App\Models\DetalleVenta;
 use App\Models\TipoPago;
+use App\Models\Configuracion;
 
 class VentaController extends Controller
 {
@@ -31,19 +32,22 @@ class VentaController extends Controller
                 'codigo',
                 'nombre',
                 'id_categoria as categoria',
-                'precio',
+                'precio_venta as precio',
                 'stock',
-                'imagen'
+                'imagen',
+        
+                'precio_base',
             )
             ->get();
 
         $tiposPago = TipoPago::where('activo',1)->get();
         $categorias = Categoria::all();
+        $porcentajeIVA = Configuracion::where('clave', 'iva') ->value('valor');
 
         
 
         return view('ModuloPrincipal', compact('cajaAbierta','productos','categorias',
-        'tiposPago'));
+        'tiposPago','porcentajeIVA'));
     }
 
     /*
@@ -92,12 +96,15 @@ class VentaController extends Controller
                     ], 422);
                 }
 
-                $subtotal += $producto->precio * $item['cantidad'];
+                $subtotal += $producto->precio_base * $item['cantidad'];
             }
 
-            $iva   = $subtotal * 0.16;
+            $porcentajeIva = Configuracion::where('clave', 'iva') ->value('valor');
+            if(!$porcentajeIva){
+                $porcentajeIva = 16; // fallback de seguridad
+            }
+            $iva = $subtotal * ($porcentajeIva / 100);
             $total = $subtotal + $iva;
-
             /*
             |--------------------------------------------------------------------------
             | 2️⃣ CREAR VENTA
@@ -127,8 +134,9 @@ class VentaController extends Controller
                     'id_venta'        => $venta->id_venta,
                     'id_producto'     => $producto->id_producto,
                     'cantidad'        => $item['cantidad'],
-                    'precio_unitario' => $producto->precio,
-                    'subtotal'        => $producto->precio * $item['cantidad']
+                    'precio_unitario' => $producto->precio_venta,
+                    'subtotal'        => $producto->precio_base * $item['cantidad'],
+                    'iva' =>  $porcentajeIva,
                 ]);
 
                 // 🔥 Descontar inventario

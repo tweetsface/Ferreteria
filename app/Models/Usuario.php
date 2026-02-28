@@ -20,6 +20,7 @@ class Usuario extends Authenticatable
         'nombre_completo',
         'email',
         'password',
+        'rol',
         'id_sucursal',
         'activo'
     ];

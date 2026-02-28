@@ -55,6 +55,7 @@ Sucursal {{ auth()->user()->sucursal->nombre ?? 'Centro' }}
 </header>
 
 <!-- ===================== CARDS ===================== -->
+
 <div class="grid grid-cols-4 gap-6 p-6">
 <div class="bg-blue-600 text-white p-6 rounded-2xl shadow">
 <p class="text-sm opacity-80">Ventas Hoy</p>
@@ -76,6 +77,7 @@ Sucursal {{ auth()->user()->sucursal->nombre ?? 'Centro' }}
 <h3 class="text-xl font-bold">0</h3>
 </div>
 </div>
+
 
 <!-- ===================== PRODUCTOS + CARRITO ===================== -->
 <div class="grid grid-cols-12 gap-6 px-6 pb-6 flex-1 min-h-0">
@@ -139,7 +141,7 @@ class="flex-1 space-y-3 overflow-y-auto min-h-0"></div>
 <span id="subtotal">$0.00</span>
 </div>
 <div class="flex justify-between text-sm">
-<span>IVA (16%)</span>
+<span>IVA {{$porcentajeIVA}}%</span>
 <span id="iva">$0.00</span>
 </div>
 <div class="flex justify-between font-bold text-lg pt-2 border-t">
@@ -259,7 +261,15 @@ function agregarProducto(id){
 let producto=productos.find(p=>p.id==id);
 let ex=carrito.find(p=>p.id==id);
 if(ex){ex.cantidad++;}
-else{carrito.push({id:producto.id,nombre:producto.nombre,precio:parseFloat(producto.precio),cantidad:1});}
+else{
+  carrito.push({
+    id: producto.id,
+    nombre: producto.nombre,
+    precio_base: parseFloat(producto.precio_base),
+    precio_venta: parseFloat(producto.precio),
+    cantidad: 1
+});
+}
 renderCarrito();
 actualizarMetricas();
 }
@@ -277,7 +287,7 @@ return;
 let subtotal=0;
 
 carrito.forEach(p=>{
-subtotal+=p.precio*p.cantidad;
+subtotal+=p.precio_base*p.cantidad;
 cont.innerHTML+=`
 <div class="bg-gray-50 p-4 rounded-xl shadow-sm border">
 <div class="flex justify-between">
@@ -286,14 +296,14 @@ cont.innerHTML+=`
 <span class="bg-blue-600 text-white text-xs px-2 py-1 rounded-full ml-2">
 x${p.cantidad}</span>
 </p>
-<p class="text-xs text-gray-500">$${p.precio} c/u</p>
+<p class="text-xs text-gray-500">$${p.precio_venta} c/u</p>
 </div>
-<p class="font-bold">$${(p.precio*p.cantidad).toFixed(2)}</p>
+<p class="font-bold">$${(p.precio_venta*p.cantidad).toFixed(2)}</p>
 </div>
 </div>`;
 });
 
-let iva=subtotal*0.16;
+let iva=subtotal*({{$porcentajeIVA}}/100);
 let total=subtotal+iva;
 
 document.getElementById("subtotal").innerText="$"+subtotal.toFixed(2);
@@ -310,9 +320,7 @@ carrito.forEach(p=>{
 subtotal+=p.precio*p.cantidad;
 cantidad+=p.cantidad;
 });
-document.getElementById("ventasHoy").innerText="$"+subtotal.toFixed(2);
-document.getElementById("productosVendidos").innerText=cantidad;
-document.getElementById("ticketsGenerados").innerText=carrito.length>0?1:0;
+
 }
 
 function scrollCategorias(valor){

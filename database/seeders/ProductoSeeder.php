@@ -5,7 +5,6 @@ namespace Database\Seeders;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
 use App\Models\Categoria;
-use Illuminate\Support\Str;
 
 class ProductoSeeder extends Seeder
 {
@@ -76,34 +75,43 @@ class ProductoSeeder extends Seeder
             "Clavo 3 pulgadas"
         ];
 
+        $iva = 16; // Puedes luego traerlo desde configuraciones
+
         foreach ($nombres as $index => $nombre) {
 
-            $precio = rand(50, 2500);
-            $costo = $precio * rand(60, 85) / 100; // margen realista
+            // 🔹 Generar precio base aleatorio
+            $precioBase = rand(50, 2000);
+
+            // 🔹 Calcular precio venta con IVA
+            $precioVenta = $precioBase * (1 + ($iva / 100));
+
+            // 🔹 Costo entre 50% y 80% del precio base
+            $costo = $precioBase * rand(50, 80) / 100;
 
             $stock = rand(10, 100);
             $stockMinimo = rand(3, 15);
 
             $productos[] = [
-                'codigo' => 'PROD-' . str_pad($index + 1, 4, '0', STR_PAD_LEFT),
-                'nombre' => $nombre,
-                'id_categoria' => $categorias[array_rand($categorias)],
-                'costo' => round($costo, 2),
-                'precio' => $precio,
-                'stock' => $stock,
-                'stock_minimo' => $stockMinimo,
-                'unidad' => $unidades[array_rand($unidades)],
-                'marca' => $marcas[array_rand($marcas)],
-                'descripcion' => 'Producto de alta calidad para uso profesional.',
-                'imagen' => null,
-                'activo' => 1,
-                'created_at' => now(),
-                'updated_at' => now(),
+                'codigo'        => 'PROD-' . str_pad($index + 1, 4, '0', STR_PAD_LEFT),
+                'nombre'        => $nombre,
+                'id_categoria'  => $categorias[array_rand($categorias)],
+                'costo'         => round($costo, 2),
+                'precio_base'   => round($precioBase, 2),
+                'precio_venta'  => round($precioVenta, 2),
+                'stock'         => $stock,
+                'stock_minimo'  => $stockMinimo,
+                'unidad'        => $unidades[array_rand($unidades)],
+                'marca'         => $marcas[array_rand($marcas)],
+                'descripcion'   => 'Producto de alta calidad para uso profesional.',
+                'imagen'        => null,
+                'activo'        => 1,
+                'created_at'    => now(),
+                'updated_at'    => now(),
             ];
         }
 
         DB::table('productos')->insert($productos);
 
-        $this->command->info('✅ Productos creados correctamente.');
+        $this->command->info('✅ Productos creados correctamente con IVA incluido.');
     }
 }

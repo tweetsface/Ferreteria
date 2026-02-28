@@ -19,7 +19,8 @@ class Producto extends Model
         'id_categoria',
 
         'costo',
-        'precio',
+        'precio_base',
+        'precio_venta',
 
         'stock',
         'stock_minimo',
@@ -45,10 +46,13 @@ class Producto extends Model
     | Calcula utilidad automáticamente
     */
     public function getUtilidadAttribute()
-    {
-        if ($this->costo !== null) {
-            return $this->precio - $this->costo;
-        }
-        return null;
-    }
+{
+    return $this->precio_base - $this->costo;
+}
+
+public function getMargenAttribute()
+{
+    if ($this->costo <= 0) return 0;
+    return (($this->precio_base - $this->costo) / $this->costo) * 100;
+}
 }

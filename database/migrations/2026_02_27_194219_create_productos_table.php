@@ -21,7 +21,8 @@ return new class extends Migration
 
         // 🔹 NUEVOS CAMPOS IMPORTANTES
         $table->decimal('costo', 12, 2)->nullable(); // Precio de compra
-        $table->decimal('precio', 12, 2); // Precio de venta
+        $table->decimal('precio_base', 12, 2);
+        $table->decimal('precio_venta', 12, 2);
         $table->integer('stock')->default(0);
         $table->integer('stock_minimo')->default(0); // Alerta inventario bajo
         $table->string('unidad')->default('pieza'); // pieza, metro, kilo
