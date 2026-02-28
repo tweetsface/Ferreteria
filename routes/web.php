@@ -53,6 +53,8 @@ Route::middleware(['auth'])->group(function () {
 
     Route::get('/venta', [VentaController::class, 'index']);
 
+    Route::post('/venta/guardar', [VentaController::class, 'guardar']);
+
 });
 
 /*

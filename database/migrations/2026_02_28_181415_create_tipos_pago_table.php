@@ -13,13 +13,13 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('ventas', function (Blueprint $table) {
-        $table->id('id_venta');
-        $table->unsignedBigInteger('id_usuario');
-        $table->unsignedBigInteger('id_caja')->nullable();
-        $table->decimal('total',12,2);
-        $table->timestamps();
-        });
+      Schema::create('tipos_pago', function (Blueprint $table) {
+    $table->id('id_tipo_pago');
+    $table->string('nombre'); // Efectivo, Tarjeta, Transferencia
+    $table->decimal('comision', 5,2)->default(0); // % comisión
+    $table->boolean('activo')->default(true);
+    $table->timestamps();
+});
     }
 
     /**
@@ -29,6 +29,6 @@ return new class extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('ventas');
+        Schema::dropIfExists('tipos_pago');
     }
 };

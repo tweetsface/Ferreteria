@@ -12,6 +12,8 @@
 </style>
 </head>
 
+
+
 <body class="bg-gray-50 text-gray-800 font-sans">
 
 <div class="flex h-screen overflow-hidden">
@@ -145,11 +147,20 @@ class="flex-1 space-y-3 overflow-y-auto min-h-0"></div>
 <span id="total" class="text-green-600">$0.00</span>
 </div>
 
+<button onclick="realizarCobro()"
+class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-semibold mt-2">
+Cobrar
+</button>
+
 <button onclick="ponerEnEspera()"
 class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-3 rounded-xl font-semibold mt-2">
 Poner en Espera
 </button>
 
+<button onclick="CancelarVenta()"
+class="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-semibold mt-2">
+Cancelar Venta
+</button>
 </div>
 </aside>
 
@@ -312,9 +323,575 @@ function ponerEnEspera(){
 alert("Venta puesta en espera (pendiente implementar backend)");
 }
 
+/* ================= FUNCIONALIDAD BOTONES ================= */
+
+let contadorEspera = 0;
+/* ================= FLUJO CORRECTO DE COBRO ================= */
+
+function realizarCobro(){
+
+renderMetodosPago();
+
+    if(carrito.length === 0){
+        alert("Carrito vacío");
+        return;
+    }
+
+    document.getElementById("totalModal").innerText =
+        document.getElementById("total").innerText;
+
+    let modal = document.getElementById("modalPago");
+    let contenedor = document.getElementById("contenedorModal");
+
+    modal.classList.remove("hidden");
+    modal.classList.add("flex");
+
+    setTimeout(()=>{
+        contenedor.classList.remove("scale-95","opacity-0");
+        contenedor.classList.add("scale-100","opacity-100");
+    },10);
+}
+
+function realizarCobroFinal(){
+
+    let metodoSeleccionado = document.querySelector(
+        'input[name="metodoPago"]:checked'
+    );
+
+    if(!metodoSeleccionado){
+        alert("Seleccione método de pago");
+        return;
+    }
+
+    let metodo = metodoSeleccionado.value;
+    let total = parseFloat(
+        document.getElementById("total").innerText.replace('$','')
+    );
+
+    if(metodo === "efectivo"){
+
+        let recibido = parseFloat(
+            document.getElementById("montoRecibido").value
+        );
+
+        if(isNaN(recibido)){
+            alert("Ingrese con cuánto paga");
+            return;
+        }
+
+        if(recibido < total){
+            alert("Monto insuficiente");
+            return;
+        }
+
+        let cambio = recibido - total;
+
+        document.getElementById("cambioCalculado")
+            .innerText = "$"+cambio.toFixed(2);
+
+        guardarVenta("efectivo");
+    }
+
+    if(metodo === "tarjeta"){
+
+        document.getElementById("seccionTarjeta")
+            .classList.remove("hidden");
+
+        document.getElementById("mensajeTerminal")
+            .innerText = "Conectando a la terminal...";
+
+        // Animación simulada
+        setTimeout(()=>{
+
+            let aprobado = Math.random() < 0.7;
+
+            if(aprobado){
+
+                document.getElementById("mensajeTerminal")
+                    .innerText = "Pago aprobado ✅";
+
+                setTimeout(()=>{
+                    guardarVenta("tarjeta");
+                },800);
+
+            } else {
+
+                document.getElementById("mensajeTerminal")
+                    .innerText = "Ocurrió un error ❌";
+
+                alert("Pago rechazado. Puede intentar nuevamente o cambiar método.");
+
+            }
+
+        },2000);
+    }
+}
+
+function guardarVenta(metodo){
+
+    let totalVenta = parseFloat(
+        document.getElementById("total").innerText.replace('$','')
+    );
+
+    let cantidadVendida = carrito.reduce((acc,p)=>acc+p.cantidad,0);
+
+    fetch('/venta/guardar',{
+        method:'POST',
+        headers:{
+            'Content-Type':'application/json',
+            'X-CSRF-TOKEN':'{{ csrf_token() }}'
+        },
+        body: JSON.stringify({
+            metodo_pago: metodo,
+            productos: carrito
+        })
+    })
+    .then(res=>res.json())
+    .then(data=>{
+
+        if(data.error){
+            alert(data.error);
+            return;
+        }
+
+        actualizarCards(totalVenta, cantidadVendida);
+
+        carrito = [];
+        renderCarrito();
+        cerrarModalPago();
+
+        alert("Venta realizada correctamente");
+    });
+}
+
+function cerrarModalPago(){
+    document.getElementById("modalPago").classList.add("hidden");
+    document.getElementById("seccionEfectivo").classList.add("hidden");
+    document.getElementById("seccionTarjeta").classList.add("hidden");
+    document.getElementById("montoRecibido").value="";
+    document.getElementById("cambioCalculado").innerText="$0.00";
+
+    document.querySelectorAll('input[name="metodoPago"]').forEach(r=>r.checked=false);
+}
+document.addEventListener("input", function(e){
+    if(e.target.id === "montoRecibido"){
+        calcularCambio();
+    }
+});
+
+function calcularCambio(){
+
+    let total = parseFloat(
+        document.getElementById("total").innerText.replace('$','')
+    );
+
+    let recibido = parseFloat(
+        document.getElementById("montoRecibido").value
+    );
+
+    let cambioElemento = document.getElementById("cambioCalculado");
+    let boton = document.getElementById("btnFinalizar");
+
+    if(isNaN(recibido)){
+        cambioElemento.innerText = "$0.00";
+        boton.disabled = true;
+        boton.classList.add("opacity-50","cursor-not-allowed");
+        return;
+    }
+
+    let cambio = recibido - total;
+
+    if(cambio < 0){
+        cambioElemento.innerText =
+            "Faltan $" + Math.abs(cambio).toFixed(2);
+        cambioElemento.classList.remove("text-green-600");
+        cambioElemento.classList.add("text-red-600");
+
+        boton.disabled = true;
+        boton.classList.add("opacity-50","cursor-not-allowed");
+
+    } else {
+        cambioElemento.innerText =
+            "$" + cambio.toFixed(2);
+        cambioElemento.classList.remove("text-red-600");
+        cambioElemento.classList.add("text-green-600");
+
+        boton.disabled = false;
+        boton.classList.remove("opacity-50","cursor-not-allowed");
+    }
+}
+function agregarMonto(valor){
+    document.getElementById("montoRecibido").value = valor;
+    calcularCambio();
+}
+
+function pagarTarjeta(idTipoPago){
+
+    document.getElementById("seleccionMetodo").classList.add("hidden");
+    document.getElementById("seccionTarjeta").classList.remove("hidden");
+
+    setTimeout(()=>{
+
+        let aprobado = Math.random() < 0.75;
+
+        if(aprobado){
+
+            document.getElementById("spinnerTerminal").classList.add("hidden");
+            document.getElementById("mensajeTerminal").innerText = "Pago aprobado ✅";
+
+            setTimeout(()=>{
+                procesarVenta(idTipoPago); // 👈 USAMOS EL ID DIRECTO
+            },800);
+
+        } else {
+
+            document.getElementById("spinnerTerminal").classList.add("hidden");
+            document.getElementById("mensajeTerminal").innerText = "Transacción rechazada ❌";
+
+            setTimeout(()=>{
+                cerrarModalPago();
+            },1500);
+        }
+
+    },2000);
+}
+
+function pagarEfectivo(){
+    document.getElementById("seleccionMetodo").classList.add("hidden");
+    document.getElementById("seccionEfectivo").classList.remove("hidden");
+}
+
+function finalizarEfectivo(){
+
+    let total = parseFloat(
+        document.getElementById("total").innerText.replace('$','')
+    );
+
+    let recibido = parseFloat(
+        document.getElementById("montoRecibido").value
+    );
+
+    if(isNaN(recibido) || recibido < total){
+        alert("Monto insuficiente");
+        return;
+    }
+
+    procesarVenta(metodoSeleccionadoId); // 👈 O pásalo como parámetro también
+
+}
+
+let procesandoVenta = false;
+
+function procesarVenta(idTipoPago){
+    
+
+    // 🔒 Evitar doble envío
+    if(procesandoVenta){
+        return;
+    }
+
+    // 🛒 Validar carrito
+    if(carrito.length === 0){
+        alert("El carrito está vacío");
+        return;
+    }
+
+    // 💳 Validar método de pago
+    if(!idTipoPago){
+        alert("Método de pago inválido");
+        return;
+    }
+
+    procesandoVenta = true;
+
+    // 🔐 Deshabilitar botón si existe
+    let btn = document.getElementById("btnFinalizar");
+    if(btn){
+        btn.disabled = true;
+        btn.classList.add("opacity-50","cursor-not-allowed");
+    }
+
+    let productosEnviar = carrito.map(item => ({
+        id: item.id,
+        cantidad: item.cantidad
+    }));
+
+    fetch('/venta/guardar',{
+        method:'POST',
+        headers:{
+            'Content-Type':'application/json',
+            'X-CSRF-TOKEN':'{{ csrf_token() }}',
+            'Accept':'application/json'
+        },
+        body: JSON.stringify({
+            id_tipo_pago: idTipoPago,
+            productos: productosEnviar
+        })
+    })
+    .then(async res => {
+
+        let data;
+
+        try {
+            data = await res.json();
+        } catch(e){
+            throw { error: "Respuesta inválida del servidor" };
+        }
+
+        if(!res.ok){
+            throw data;
+        }
+
+        return data;
+    })
+    .then(data => {
+
+        // 💰 Calcular métricas antes de limpiar
+        let totalVenta = parseFloat(
+            document.getElementById("total").innerText.replace('$','')
+        );
+
+        let cantidadVendida = carrito.reduce((acc,p)=>acc+p.cantidad,0);
+
+        actualizarCards(totalVenta, cantidadVendida);
+
+        // 🧹 Limpiar carrito
+        carrito = [];
+        renderCarrito();
+
+        cerrarModalPago();
+
+        alert("Venta guardada correctamente");
+
+    })
+    .catch(error => {
+
+        console.error("Error real:", error);
+
+        alert(error.error || "Error al procesar la venta");
+
+    })
+    .finally(() => {
+
+        procesandoVenta = false;
+
+        if(btn){
+            btn.disabled = false;
+            btn.classList.remove("opacity-50","cursor-not-allowed");
+        }
+
+    });
+}
+function ponerEnEspera(){
+
+    if(carrito.length === 0){
+        alert("Carrito vacío");
+        return;
+    }
+
+    contadorEspera++;
+
+    document.getElementById("ventasEnEspera").innerText = contadorEspera;
+
+    carrito = [];
+    renderCarrito();
+}
+
+function CancelarVenta(){
+
+    if(carrito.length === 0){
+        alert("No hay venta activa");
+        return;
+    }
+
+    if(!confirm("¿Seguro que deseas cancelar la venta?")){
+        return;
+    }
+
+    carrito = [];
+    renderCarrito();
+}
+
+
+/* ================= ACTUALIZAR CARDS ================= */
+
+function actualizarCards(totalVenta, cantidadVendida){
+
+    let ventasHoy = parseFloat(
+        document.getElementById("ventasHoy").innerText.replace('$','')
+    );
+
+    let productosVendidos = parseInt(
+        document.getElementById("productosVendidos").innerText
+    );
+
+    let tickets = parseInt(
+        document.getElementById("ticketsGenerados").innerText
+    );
+
+    ventasHoy += totalVenta;
+    productosVendidos += cantidadVendida;
+    tickets += 1;
+
+    document.getElementById("ventasHoy").innerText = "$"+ventasHoy.toFixed(2);
+    document.getElementById("productosVendidos").innerText = productosVendidos;
+    document.getElementById("ticketsGenerados").innerText = tickets;
+}
+
+document.addEventListener("change", function(e){
+
+    if(e.target.name === "metodoPago"){
+
+        // Ocultar ambas secciones primero
+        document.getElementById("seccionEfectivo").classList.add("hidden");
+        document.getElementById("seccionTarjeta").classList.add("hidden");
+
+        // Mostrar según selección
+        if(e.target.value === "efectivo"){
+            document.getElementById("seccionEfectivo")
+                .classList.remove("hidden");
+        }
+
+        if(e.target.value === "tarjeta"){
+            document.getElementById("seccionTarjeta")
+                .classList.remove("hidden");
+        }
+    }
+
+});
+
+
+
+
+
+
+
 renderProductos();
 renderCarrito();
+
+
+const tiposPago = @json($tiposPago);
+
+
+function renderMetodosPago(){
+
+    let contenedor = document.getElementById("seleccionMetodo");
+    contenedor.innerHTML = "";
+
+    tiposPago.forEach(tipo => {
+
+        let icono = "💳";
+
+        if(tipo.nombre.toLowerCase().includes("efectivo")){
+            icono = "💵";
+        }
+
+        contenedor.innerHTML += `
+        <div onclick="seleccionarMetodo(${tipo.id_tipo_pago}, '${tipo.nombre}')"
+        class="cursor-pointer border-2 border-gray-200 rounded-2xl p-6 flex flex-col items-center gap-3 hover:border-blue-500 hover:shadow-xl transition">
+
+            <div class="text-5xl">${icono}</div>
+            <p class="font-semibold text-gray-700">${tipo.nombre}</p>
+
+        </div>
+        `;
+    });
+}
+
+let metodoSeleccionadoId = null;
+let metodoSeleccionadoNombre = null;
+function seleccionarMetodo(id, nombre){
+
+    metodoSeleccionadoId = id; // guardamos por seguridad
+
+    document.getElementById("seleccionMetodo").classList.add("hidden");
+
+    if(nombre.toLowerCase().includes("efectivo")){
+        pagarEfectivo(id); // 👈 PASAMOS EL ID
+    }
+
+    if(nombre.toLowerCase().includes("tarjeta")){
+        pagarTarjeta(id); // 👈 PASAMOS EL ID
+    }
+}
+
+
 </script>
+
+<!-- ================= MODAL METODO DE PAGO ================= -->
+<!-- ================= MODAL COBRO PRO ================= -->
+<div id="modalPago"
+class="fixed inset-0 bg-black bg-opacity-40 backdrop-blur-sm hidden items-center justify-center z-50">
+
+<div id="contenedorModal"
+class="bg-white w-[520px] p-8 rounded-3xl shadow-2xl scale-95 opacity-0 transition-all duration-300">
+
+<h3 class="text-center text-gray-400 text-xs tracking-widest uppercase">
+Total a pagar
+</h3>
+
+<p id="totalModal"
+class="text-center text-5xl font-extrabold text-green-600 my-4 tracking-tight">
+$0.00
+</p>
+
+<!-- ================= SELECCION METODO ================= -->
+<div id="seleccionMetodo"
+class="grid grid-cols-2 gap-6 mt-6">
+</div>
+
+<!-- ================= EFECTIVO ================= -->
+<div id="seccionEfectivo" class="hidden mt-8 space-y-4">
+
+<input type="number"
+id="montoRecibido"
+placeholder="¿Con cuánto paga?"
+class="w-full border-2 border-gray-200 focus:border-green-500 rounded-xl px-4 py-3 text-lg outline-none transition">
+
+<!-- Botones rápidos -->
+<div class="flex gap-3">
+<button onclick="agregarMonto(100)" class="flex-1 bg-gray-100 hover:bg-gray-200 rounded-lg py-2">$100</button>
+<button onclick="agregarMonto(200)" class="flex-1 bg-gray-100 hover:bg-gray-200 rounded-lg py-2">$200</button>
+<button onclick="agregarMonto(500)" class="flex-1 bg-gray-100 hover:bg-gray-200 rounded-lg py-2">$500</button>
+</div>
+
+<div class="flex justify-between text-lg">
+<span class="text-gray-500">Cambio:</span>
+<span id="cambioCalculado"
+class="font-bold text-green-600">$0.00</span>
+</div>
+
+<button id="btnFinalizar"
+onclick="finalizarEfectivo()"
+disabled
+class="w-full bg-green-600 text-white py-3 rounded-xl font-semibold mt-4 opacity-50 cursor-not-allowed transition">
+Finalizar Cobro
+</button>
+
+</div>
+
+<!-- ================= TARJETA ================= -->
+<div id="seccionTarjeta"
+class="hidden mt-8 flex flex-col items-center gap-4">
+
+<div id="spinnerTerminal"
+class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+
+<p id="mensajeTerminal"
+class="text-gray-600 font-medium">
+Conectando a la terminal...
+</p>
+
+</div>
+
+<button onclick="cerrarModalPago()"
+class="w-full bg-gray-100 hover:bg-gray-200 py-2 rounded-xl mt-8 transition">
+Cancelar
+</button>
+
+</div>
+</div>
+</div>
 
 </body>
 </html>
