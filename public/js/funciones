@@ -1,0 +1,33 @@
+document.addEventListener("DOMContentLoaded", () => {
+  document.querySelectorAll(".add-btn").forEach(button => {
+    button.addEventListener("click", () => {
+      alert("Producto agregado al carrito (ejemplo)");
+      // Aquí va tu lógica real para agregar producto
+    });
+  });
+
+  document.querySelectorAll(".qty-plus").forEach(button => {
+    button.addEventListener("click", () => {
+      const qty = button.closest(".qty-wrapper").querySelector(".qty-value");
+      qty.textContent = parseInt(qty.textContent) + 1;
+    });
+  });
+
+  document.querySelectorAll(".qty-minus").forEach(button => {
+    button.addEventListener("click", () => {
+      const qty = button.closest(".qty-wrapper").querySelector(".qty-value");
+      if (parseInt(qty.textContent) > 1) {
+        qty.textContent = parseInt(qty.textContent) - 1;
+      }
+    });
+  });
+
+  document.querySelector("#btnCobrar").addEventListener("click", () => {
+    const promo = document.querySelector("#codigoPromo").value;
+    if (promo === "DESCUENTO10") {
+      alert("Código válido: se aplicará 10% de descuento");
+    } else {
+      alert("Código promocional inválido");
+    }
+  });
+});
