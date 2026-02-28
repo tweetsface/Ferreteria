@@ -10,7 +10,6 @@
 .no-scrollbar::-webkit-scrollbar{display:none;}
 .no-scrollbar{-ms-overflow-style:none;scrollbar-width:none;}
 </style>
-
 </head>
 
 <body class="bg-gray-50 text-gray-800 font-sans">
@@ -87,13 +86,11 @@ placeholder="Buscar producto..."
 oninput="filtrarProductos()"
 class="w-full border rounded-xl px-5 py-3 mb-4 focus:ring-2 focus:ring-yellow-400">
 
-<!-- CATEGORIAS DINÁMICAS -->
+<!-- CATEGORIAS -->
 <div class="relative mb-4">
 
 <button onclick="scrollCategorias(-200)"
-class="absolute left-0 top-1/2 -translate-y-1/2 bg-white shadow px-2 py-1 rounded-full z-10">
-‹
-</button>
+class="absolute left-0 top-1/2 -translate-y-1/2 bg-white shadow px-2 py-1 rounded-full z-10">‹</button>
 
 <div id="contenedorCategorias"
 class="flex gap-3 overflow-x-auto no-scrollbar scroll-smooth px-8">
@@ -115,10 +112,7 @@ class="px-4 py-2 bg-gray-200 rounded-lg whitespace-nowrap hover:bg-gray-300 tran
 </div>
 
 <button onclick="scrollCategorias(200)"
-class="absolute right-0 top-1/2 -translate-y-1/2 bg-white shadow px-2 py-1 rounded-full z-10">
-›
-</button>
-
+class="absolute right-0 top-1/2 -translate-y-1/2 bg-white shadow px-2 py-1 rounded-full z-10">›</button>
 </div>
 
 <div id="listaProductos"
@@ -157,7 +151,6 @@ Poner en Espera
 </button>
 
 </div>
-
 </aside>
 
 </div>
@@ -170,6 +163,8 @@ let productosFiltrados=[...productos];
 let paginaActual=1;
 let categoriaActual="todos";
 const porPagina=6;
+
+/* ================= FILTROS ================= */
 
 function filtrarCategoria(cat,btn){
 categoriaActual=cat;
@@ -184,12 +179,13 @@ function filtrarProductos(){
 let texto=document.getElementById("buscador").value.toLowerCase();
 productosFiltrados=productos.filter(p=>{
 return p.nombre.toLowerCase().includes(texto) &&
-(categoriaActual==="todos"||p.id_categoria==categoriaActual);
+(categoriaActual==="todos"||p.categoria==categoriaActual);
 });
 paginaActual=1;
 renderProductos();
-actualizarMetricas();
 }
+
+/* ================= PRODUCTOS ================= */
 
 function renderProductos(){
 let cont=document.getElementById("listaProductos");
@@ -199,17 +195,37 @@ let fin=inicio+porPagina;
 let lista=productosFiltrados.slice(inicio,fin);
 
 lista.forEach(p=>{
+
+let imagenHTML = p.imagen
+? `
+<div class="w-full h-36 bg-white rounded-xl mb-3 flex items-center justify-center overflow-hidden border">
+    <img src="/storage/${p.imagen}"
+         class="max-h-full max-w-full object-contain transition-transform duration-200 hover:scale-105"
+         onerror="this.src='https://via.placeholder.com/150?text=Sin+Imagen'">
+</div>
+`
+: `
+<div class="w-full h-36 flex items-center justify-center bg-gray-100 rounded-xl mb-3 text-gray-400 border">
+    Sin imagen
+</div>
+`;
 cont.innerHTML+=`
-<div class="bg-gray-50 p-5 rounded-xl border hover:shadow-md transition">
+<div class="bg-gray-50 p-5 rounded-xl border hover:shadow-md transition flex flex-col">
+
+${imagenHTML}
+
 <h3 class="font-semibold">${p.nombre}</h3>
 <p class="text-yellow-600 font-bold">$${parseFloat(p.precio).toFixed(2)}</p>
 <p class="text-sm text-gray-500">Stock: ${p.stock}</p>
+
 <button onclick="agregarProducto(${p.id})"
 class="w-full bg-blue-600 text-white py-2 rounded-lg mt-2">
 Agregar
 </button>
+
 </div>`;
 });
+
 renderPaginacion();
 }
 
@@ -226,6 +242,8 @@ ${i}
 }
 }
 
+/* ================= CARRITO ================= */
+
 function agregarProducto(id){
 let producto=productos.find(p=>p.id==id);
 let ex=carrito.find(p=>p.id==id);
@@ -238,12 +256,15 @@ actualizarMetricas();
 function renderCarrito(){
 let cont=document.getElementById("listaCarrito");
 cont.innerHTML="";
+
 if(carrito.length===0){
 cont.innerHTML=`<div class="flex items-center justify-center h-full text-gray-400">🛒 No hay productos en el carrito</div>`;
 actualizarMetricas();
 return;
 }
+
 let subtotal=0;
+
 carrito.forEach(p=>{
 subtotal+=p.precio*p.cantidad;
 cont.innerHTML+=`
@@ -260,11 +281,14 @@ x${p.cantidad}</span>
 </div>
 </div>`;
 });
+
 let iva=subtotal*0.16;
 let total=subtotal+iva;
+
 document.getElementById("subtotal").innerText="$"+subtotal.toFixed(2);
 document.getElementById("iva").innerText="$"+iva.toFixed(2);
 document.getElementById("total").innerText="$"+total.toFixed(2);
+
 actualizarMetricas();
 }
 
@@ -282,6 +306,10 @@ document.getElementById("ticketsGenerados").innerText=carrito.length>0?1:0;
 
 function scrollCategorias(valor){
 document.getElementById("contenedorCategorias").scrollLeft+=valor;
+}
+
+function ponerEnEspera(){
+alert("Venta puesta en espera (pendiente implementar backend)");
 }
 
 renderProductos();

@@ -28,7 +28,8 @@ class VentaController extends Controller
             'nombre',
             'id_categoria as categoria',
             'precio',
-            'stock'
+            'stock',
+            'imagen',
         )
         ->get();
 
