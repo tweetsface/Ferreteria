@@ -1,36 +1,12 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Productos - Ferretería POS</title>
-<script src="https://cdn.tailwindcss.com"></script>
-</head>
+@extends('layouts.app')
 
-<body class="bg-gray-50 text-gray-800 font-sans">
+@section('title', 'Productos')
 
-<div class="flex h-screen overflow-hidden">
+@section('modulo')
+Gestión de Productos
+@endsection
 
-<!-- SIDEBAR -->
-<aside class="w-64 bg-white border-r shadow-sm flex flex-col">
-<div class="p-5 border-b">
-<h1 class="text-lg font-bold text-gray-800">Ferretería POS</h1>
-<p class="text-sm text-gray-500">Sucursal Centro</p>
-</div>
-<nav class="p-4 space-y-2 text-sm flex-1 overflow-y-auto">
-<a href="/dashboard" class="block px-4 py-2 rounded-lg hover:bg-gray-100">📊 Dashboard</a>
-<a href="/venta" class="block px-4 py-2 rounded-lg hover:bg-gray-100">🏪 Venta</a>
-<p class="px-4 py-2 text-gray-400 uppercase text-xs">Gestión</p>
-<a href="/productos" class="block px-4 py-2 rounded-lg bg-yellow-100 text-yellow-700 font-semibold">📦 Productos</a>
-</nav>
-</aside>
-
-<!-- CONTENIDO -->
-<div class="flex-1 flex flex-col">
-
-<header class="bg-white border-b px-8 py-4 shadow-sm">
-<h2 class="text-xl font-bold text-gray-800">Gestión de Productos</h2>
-</header>
+@section('content')
 
 <main class="flex-1 p-6 overflow-y-auto">
 
@@ -373,7 +349,15 @@ const modal=document.getElementById('modalEditar');
 modal.classList.add('hidden');
 modal.classList.remove('flex');
 }
-</script>
 
-</body>
-</html>
+document.addEventListener("DOMContentLoaded", function () {
+    setTimeout(() => {
+        const sku = document.getElementById("codigo");
+        if(sku){
+            sku.focus();
+            sku.select(); // opcional: selecciona texto existente
+        }
+    }, 100);
+});
+</script>
+@endsection

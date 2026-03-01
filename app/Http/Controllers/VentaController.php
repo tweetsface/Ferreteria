@@ -31,11 +31,11 @@ class VentaController extends Controller
                 'id_producto as id',
                 'codigo',
                 'nombre',
+                'unidad',
                 'id_categoria as categoria',
                 'precio_venta as precio',
                 'stock',
                 'imagen',
-        
                 'precio_base',
             )
             ->get();

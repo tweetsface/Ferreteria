@@ -1,86 +1,77 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Ferretería POS Premium</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+@extends('layouts.app')
 
-<style>
-.no-scrollbar::-webkit-scrollbar{display:none;}
-.no-scrollbar{-ms-overflow-style:none;scrollbar-width:none;}
-</style>
-</head>
+@section('title','Venta')
+@section('modulo','Punto de Venta')
+
+@section('content')
+
+<div class="flex flex-col h-full">
 
 
 
-<body class="bg-gray-50 text-gray-800 font-sans">
-
-<div class="flex h-screen overflow-hidden">
-
-<!-- ===================== SIDEBAR ===================== -->
-<aside class="w-64 bg-white border-r shadow-sm flex flex-col">
-
-<div class="p-5 border-b">
-<h1 class="text-lg font-bold text-gray-800">Ferretería POS</h1>
-<p class="text-sm text-gray-500">
-Sucursal {{ auth()->user()->sucursal->nombre ?? 'Centro' }}
-</p>
-</div>
-
-<nav class="p-4 space-y-2 text-sm flex-1 overflow-y-auto">
-<a href="/dashboard" class="block px-4 py-2 rounded-lg hover:bg-gray-100">📊 Dashboard</a>
-<a href="/venta" class="block px-4 py-2 rounded-lg bg-yellow-100 text-yellow-700 font-semibold">🏪 Venta</a>
-<p class="px-4 py-2 text-gray-400 uppercase text-xs">Gestión</p>
-<a href="/productos" class="block px-4 py-2 rounded-lg hover:bg-gray-100">📦 Productos</a>
-<a href="/clientes" class="block px-4 py-2 rounded-lg hover:bg-gray-100">👥 Clientes</a>
-<a href="/usuarios" class="block px-4 py-2 rounded-lg hover:bg-gray-100">👤 Usuarios</a>
-</nav>
-</aside>
 
 <!-- ===================== CONTENIDO ===================== -->
-<div class="flex-1 flex flex-col min-h-0">
+
 
 <!-- HEADER -->
-<header class="bg-white border-b px-8 py-4 shadow-sm">
-<h2 class="text-xl font-bold">Punto de Venta</h2>
-<div class="flex gap-4 mt-2 text-sm">
-<div class="bg-blue-50 text-blue-700 px-4 py-2 rounded-xl">
-🖥 Caja {{ $cajaAbierta->id ?? '01' }}
-</div>
-<div class="bg-green-50 text-green-700 px-4 py-2 rounded-xl">
-👤 {{ auth()->user()->nombre_completo }}
-</div>
-</div>
-</header>
+
 
 <!-- ===================== CARDS ===================== -->
+<div class="bg-white border rounded-xl px-6 py-4 mb-6">
 
-<div class="grid grid-cols-4 gap-6 p-6">
-<div class="bg-blue-600 text-white p-6 rounded-2xl shadow">
-<p class="text-sm opacity-80">Ventas Hoy</p>
-<h3 id="ventasHoy" class="text-xl font-bold">$0.00</h3>
+<div class="grid grid-cols-4 gap-6 text-sm">
+
+    <!-- Ventas -->
+    <div class="flex flex-col">
+        <span class="text-gray-400 uppercase text-xs tracking-wide">
+            Ventas Hoy
+        </span>
+        <span id="ventasHoy"
+              class="text-xl font-semibold text-gray-900">
+            $0.00
+        </span>
+    </div>
+
+    <!-- Productos -->
+    <div class="flex flex-col border-l pl-6">
+        <span class="text-gray-400 uppercase text-xs tracking-wide">
+            Productos Vendidos
+        </span>
+        <span id="productosVendidos"
+              class="text-xl font-semibold text-gray-900">
+            0
+        </span>
+    </div>
+
+    <!-- Tickets -->
+    <div class="flex flex-col border-l pl-6">
+        <span class="text-gray-400 uppercase text-xs tracking-wide">
+            Tickets
+        </span>
+        <span id="ticketsGenerados"
+              class="text-xl font-semibold text-gray-900">
+            0
+        </span>
+    </div>
+
+    <!-- En espera -->
+    <div class="flex flex-col border-l pl-6">
+        <span class="text-gray-400 uppercase text-xs tracking-wide">
+            En Espera
+        </span>
+        <span id="ventasEnEspera"
+              class="text-xl font-semibold text-gray-900">
+            0
+        </span>
+    </div>
+
 </div>
 
-<div class="bg-green-600 text-white p-6 rounded-2xl shadow">
-<p class="text-sm opacity-80">Productos Vendidos</p>
-<h3 id="productosVendidos" class="text-xl font-bold">0</h3>
-</div>
-
-<div class="bg-purple-600 text-white p-6 rounded-2xl shadow">
-<p class="text-sm opacity-80">Tickets Generados</p>
-<h3 id="ticketsGenerados" class="text-xl font-bold">0</h3>
-</div>
-
-<div class="bg-yellow-500 text-white p-6 rounded-2xl shadow">
-<p class="text-sm opacity-80">En Espera</p>
-<h3 class="text-xl font-bold">0</h3>
-</div>
 </div>
 
 
 <!-- ===================== PRODUCTOS + CARRITO ===================== -->
-<div class="grid grid-cols-12 gap-6 px-6 pb-6 flex-1 min-h-0">
+<div class="grid grid-cols-12 gap-6 flex-1 min-h-0">
 
 <!-- PRODUCTOS -->
 <section class="col-span-8 bg-white rounded-2xl shadow-sm border p-6 flex flex-col min-h-0">
@@ -89,6 +80,8 @@ Sucursal {{ auth()->user()->sucursal->nombre ?? 'Centro' }}
 placeholder="Buscar producto..."
 oninput="filtrarProductos()"
 class="w-full border rounded-xl px-5 py-3 mb-4 focus:ring-2 focus:ring-yellow-400">
+
+
 
 <!-- CATEGORIAS -->
 <div class="relative mb-4">
@@ -267,7 +260,8 @@ else{
     nombre: producto.nombre,
     precio_base: parseFloat(producto.precio_base),
     precio_venta: parseFloat(producto.precio),
-    cantidad: 1
+    cantidad: 1,
+    unidad:producto.unidad
 });
 }
 renderCarrito();
@@ -296,7 +290,7 @@ cont.innerHTML+=`
 <span class="bg-blue-600 text-white text-xs px-2 py-1 rounded-full ml-2">
 x${p.cantidad}</span>
 </p>
-<p class="text-xs text-gray-500">$${p.precio_venta} c/u</p>
+<p class="text-xs text-gray-500">$${p.precio_venta} c/${p.unidad}</p>
 </div>
 <p class="font-bold">$${(p.precio_venta*p.cantidad).toFixed(2)}</p>
 </div>
@@ -670,6 +664,8 @@ function procesarVenta(idTipoPago){
         cerrarModalPago();
 
         alert("Venta guardada correctamente");
+        reiniciarVenta();
+
 
     })
     .catch(error => {
@@ -774,6 +770,8 @@ document.addEventListener("change", function(e){
 
 
 
+
+
 renderProductos();
 renderCarrito();
 
@@ -824,8 +822,175 @@ function seleccionarMetodo(id, nombre){
 }
 
 
+/* ================= DETECTOR SCANNER PROFESIONAL ================= */
+
+let scannerBuffer = "";
+let lastKeyTime = 0;
+let scannerTimer = null;
+
+// velocidad máxima entre teclas (scanner = rapidísimo)
+const SCANNER_SPEED = 50; // ms
+
+document.addEventListener("keydown", function(e){
+
+    // ignorar teclas especiales
+    if(e.key.length > 1 && e.key !== "Enter") return;
+
+    const now = Date.now();
+    const timeDiff = now - lastKeyTime;
+    lastKeyTime = now;
+
+    // si tarda mucho → es humano → reiniciar buffer
+    if(timeDiff > SCANNER_SPEED){
+        scannerBuffer = "";
+    }
+
+    // ENTER normalmente finaliza lectura
+    if(e.key === "Enter"){
+        if(scannerBuffer.length >= 6){
+            procesarCodigoScanner(scannerBuffer);
+        }
+        scannerBuffer = "";
+        return;
+    }
+
+    scannerBuffer += e.key;
+
+    clearTimeout(scannerTimer);
+
+    // fallback por si el scanner no manda ENTER
+    scannerTimer = setTimeout(()=>{
+        if(scannerBuffer.length >= 6){
+            procesarCodigoScanner(scannerBuffer);
+        }
+        scannerBuffer = "";
+    }, 80);
+
+});
+
+function procesarCodigoScanner(codigo){
+
+    // 🔥 limpieza completa estilo POS real
+    codigo = codigo
+        .replace(/\r/g,'')
+        .replace(/\n/g,'')
+        .replace(/\s/g,'').trim();
+
+    console.log("CODIGO LIMPIO:", codigo);
+
+    let producto = productos.find(p =>
+        String(p.codigo).trim() === codigo
+    );
+
+    if(producto){
+
+        agregarProducto(producto.id);
+        mostrarFeedbackScanner(true, producto.nombre);
+
+    }else{
+        mostrarFeedbackScanner(false, codigo);
+    }
+}
+function mostrarFeedbackScanner(exito, texto){
+
+    const aviso = document.getElementById("scannerFeedback");
+
+    // 🔥 reset total para permitir múltiples ejecuciones
+    aviso.style.opacity = "0";
+    aviso.style.transform = "translateY(-10px)";
+
+    // forzar reflow (truco profesional)
+    aviso.offsetHeight;
+
+    if(exito){
+        aviso.className =
+        "fixed top-6 right-6 px-6 py-3 rounded-lg shadow-lg text-white font-semibold bg-green-600 transition-all duration-300 z-50";
+        aviso.innerText = "✔ Agregado: " + texto;
+    }else{
+        aviso.className =
+        "fixed top-6 right-6 px-6 py-3 rounded-lg shadow-lg text-white font-semibold bg-red-600 transition-all duration-300 z-50";
+        aviso.innerText = "✖ No se encontró el producto";
+    }
+
+    // mostrar
+    aviso.style.opacity = "1";
+    aviso.style.transform = "translateY(0)";
+
+    // ocultar después
+    setTimeout(()=>{
+        aviso.style.opacity = "0";
+        aviso.style.transform = "translateY(-10px)";
+    },1500);
+}
+
+function reiniciarVenta(){
+
+    /* ================= LIMPIAR CARRITO ================= */
+    carrito = [];
+    renderCarrito();
+
+    /* ================= REINICIAR TOTALES ================= */
+    document.getElementById("subtotal").innerText = "$0.00";
+    document.getElementById("iva").innerText = "$0.00";
+    document.getElementById("total").innerText = "$0.00";
+
+    /* ================= LIMPIAR MODAL ================= */
+    document.getElementById("montoRecibido").value = "";
+    document.getElementById("cambioCalculado").innerText = "$0.00";
+
+    document.getElementById("seccionEfectivo").classList.add("hidden");
+    document.getElementById("seccionTarjeta").classList.add("hidden");
+
+    document.querySelectorAll('input[name="metodoPago"]')
+        .forEach(r => r.checked = false);
+
+    /* ================= LIMPIAR SCANNER ================= */
+    scannerBuffer = "";
+
+    /* ================= CERRAR MODAL ================= */
+    cerrarModalPago();
+
+}
+/* ===== SIMULADOR DE LECTOR ===== */
+
+function simularScanner(codigo = "7501031311309") {
+
+    let i = 0;
+
+    const intervalo = setInterval(() => {
+
+        if(i < codigo.length){
+
+            document.dispatchEvent(
+                new KeyboardEvent("keydown", {
+                    key: codigo[i]
+                })
+            );
+
+            i++;
+
+        } else {
+
+            document.dispatchEvent(
+                new KeyboardEvent("keydown", {
+                    key: "Enter"
+                })
+            );
+
+            clearInterval(intervalo);
+        }
+
+    }, 10); // velocidad scanner real
+}
+
 </script>
 
+
+<div id="scannerFeedback"
+class="fixed top-6 right-6 px-6 py-3 rounded-lg shadow-lg
+text-white font-semibold opacity-0 pointer-events-none
+transition-all duration-300 z-50">
+</div>
 <!-- ================= MODAL METODO DE PAGO ================= -->
 <!-- ================= MODAL COBRO PRO ================= -->
 <div id="modalPago"
@@ -900,6 +1065,5 @@ Cancelar
 </div>
 </div>
 </div>
-
-</body>
-</html>
+</div>
+@endsection

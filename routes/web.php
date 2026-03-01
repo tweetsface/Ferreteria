@@ -38,8 +38,11 @@ Route::middleware(['auth'])->group(function () {
     Route::post('productos', [ProductoController::class,'store'])->name('producto.store');
     Route::put('productos/{id}', [ProductoController::class,'update'])->name('producto.update');  
     Route::delete('productos', [ProductoController::class,'destroy'])->name('producto.destroy');  
-    Route::resource('clientes', ClienteController::class);
-    Route::resource('usuarios', UsuarioController::class);
+    Route::get('clientes', [ClienteController::class,'index'])->name('cliente.index');
+    Route::get('usuarios', [UsuarioController::class,'index'])->name('usuario.index');
+    Route::get('sucursales', [SucursalController::class,'index'])->name('sucursal.index');
+
+
     Route::resource('sucursales', SucursalController::class);
     Route::resource('inventario', InventarioController::class);
     Route::resource('promociones', PromocionController::class);
