@@ -22,10 +22,23 @@ class DatabaseSeeder extends Seeder
         // ]);
     $this->call([
     UsuarioSeeder::class,
+    SucursalesSeeder::class,
+    UnidadesSeeder::class,
+    UnidadesSatSeeder::class,
+    ClavesProductosSatSeeder::class,
+    FamiliasSeeder::class,
     CategoriaSeeder::class,
     ProductoSeeder::class,
     TipoPagoSeeder::class,
     ConfiguracionSeeder::class,
+    ProveedoresSeeder::class,
+    RegimenFiscalSeeder::class,
+    UsoCfdiSeeder::class,
+    UsoCfdiRegimenSeeder::class,
+    ClientesSeeder::class,
+    //ImportarProductosAccessSeeder::Class,
+    //ImportarFamiliasSeeder::Class,
+
 ]);
     }
 }

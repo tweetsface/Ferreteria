@@ -13,10 +13,9 @@ return new class extends Migration
      */
     public function up()
     {
-        Schema::create('ventas', function (Blueprint $table) {
-
+    Schema::create('ventas', function (Blueprint $table) {
     $table->id('id_venta');
-
+    $table->string('folio')->nullable()->unique();
     $table->unsignedBigInteger('id_usuario');
     $table->unsignedBigInteger('id_caja')->nullable();
 
@@ -25,6 +24,12 @@ return new class extends Migration
     $table->decimal('total',10,2);
 
     $table->unsignedBigInteger('id_tipo_pago'); //
+
+    $table->string('uuid_factura')->nullable();
+    $table->string('facturama_id')->nullable();
+    $table->string('status_factura')->nullable();
+    $table->timestamp('fecha_facturacion')->nullable();
+    
 
     $table->timestamps();
 

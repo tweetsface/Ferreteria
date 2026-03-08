@@ -10,14 +10,19 @@ class Venta extends Model
     public $incrementing = true;
     protected $keyType = 'int';
 
-    protected $fillable = [
-        'id_usuario',
-        'id_caja',
-        'subtotal',
-        'iva',
-        'total',
-        'id_tipo_pago'
-    ];
+  protected $fillable = [
+    'id_usuario',
+    'id_caja',
+    'folio',
+    'subtotal',
+    'iva',
+    'total',
+    'id_tipo_pago',
+    'uuid_factura',
+    'facturama_id',
+    'status_factura',
+    'fecha_facturacion'
+];
 
     // Relaciones
 
@@ -35,4 +40,14 @@ class Venta extends Model
     {
         return $this->hasMany(DetalleVenta::class, 'id_venta', 'id_venta');
     }
+
+    public function producto()
+{
+return $this->belongsTo(Producto::class,'id_producto');
+}
+
+    public function cliente()
+{
+    return $this->belongsTo(Cliente::class, 'id_cliente', 'id_cliente');
+}
 }

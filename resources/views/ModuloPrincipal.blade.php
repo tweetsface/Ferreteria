@@ -19,46 +19,55 @@
 <!-- ===================== CARDS ===================== -->
 <div class="bg-white border rounded-xl px-6 py-4 mb-6">
 
-<div class="grid grid-cols-4 gap-6 text-sm">
+<div class="grid {{ auth()->user()->rol == 1 ? 'grid-cols-4' : 'grid-cols-3' }} gap-6 text-sm">
 
-    <!-- Ventas -->
+    {{-- ================= VENTAS HOY (SOLO ADMIN) ================= --}}
+    @if(auth()->user()->rol == 1)
     <div class="flex flex-col">
         <span class="text-gray-400 uppercase text-xs tracking-wide">
             Ventas Hoy
         </span>
+
         <span id="ventasHoy"
               class="text-xl font-semibold text-gray-900">
             $0.00
         </span>
     </div>
+    @endif
 
-    <!-- Productos -->
+
+    {{-- ================= PRODUCTOS ================= --}}
     <div class="flex flex-col border-l pl-6">
         <span class="text-gray-400 uppercase text-xs tracking-wide">
             Productos Vendidos
         </span>
+
         <span id="productosVendidos"
               class="text-xl font-semibold text-gray-900">
             0
         </span>
     </div>
 
-    <!-- Tickets -->
+
+    {{-- ================= TICKETS ================= --}}
     <div class="flex flex-col border-l pl-6">
         <span class="text-gray-400 uppercase text-xs tracking-wide">
             Tickets
         </span>
+
         <span id="ticketsGenerados"
               class="text-xl font-semibold text-gray-900">
             0
         </span>
     </div>
 
-    <!-- En espera -->
+
+    {{-- ================= EN ESPERA ================= --}}
     <div class="flex flex-col border-l pl-6">
         <span class="text-gray-400 uppercase text-xs tracking-wide">
             En Espera
         </span>
+
         <span id="ventasEnEspera"
               class="text-xl font-semibold text-gray-900">
             0
@@ -68,7 +77,6 @@
 </div>
 
 </div>
-
 
 <!-- ===================== PRODUCTOS + CARRITO ===================== -->
 <div class="grid grid-cols-12 gap-6 flex-1 min-h-0">
@@ -144,17 +152,17 @@ class="flex-1 space-y-3 overflow-y-auto min-h-0"></div>
 
 <button onclick="realizarCobro()"
 class="w-full bg-green-500 hover:bg-green-600 text-white py-3 rounded-xl font-semibold mt-2">
-Cobrar
+Cobrar [F1]
 </button>
 
 <button onclick="ponerEnEspera()"
 class="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-3 rounded-xl font-semibold mt-2">
-Poner en Espera
+Poner en Espera [F2]
 </button>
 
 <button onclick="CancelarVenta()"
 class="w-full bg-red-500 hover:bg-red-600 text-white py-3 rounded-xl font-semibold mt-2">
-Cancelar Venta
+Cancelar Venta [F3]
 </button>
 </div>
 </aside>
@@ -164,6 +172,7 @@ Cancelar Venta
 
 <script>
 const productos=@json($productos);
+const esAdmin = {{ auth()->user()->rol == 1 ? 'true' : 'false' }};
 let carrito=[];
 let productosFiltrados=[...productos];
 let paginaActual=1;
@@ -192,6 +201,7 @@ renderProductos();
 }
 
 /* ================= PRODUCTOS ================= */
+
 
 function renderProductos(){
 let cont=document.getElementById("listaProductos");
@@ -222,7 +232,9 @@ ${imagenHTML}
 
 <h3 class="font-semibold">${p.nombre}</h3>
 <p class="text-yellow-600 font-bold">$${parseFloat(p.precio).toFixed(2)}</p>
+${esAdmin ? `
 <p class="text-sm text-gray-500">Stock: ${p.stock}</p>
+` : ``}
 
 <button onclick="agregarProducto(${p.id})"
 class="w-full bg-blue-600 text-white py-2 rounded-lg mt-2">
@@ -269,20 +281,23 @@ actualizarMetricas();
 }
 
 function renderCarrito(){
-let cont=document.getElementById("listaCarrito");
-cont.innerHTML="";
 
-if(carrito.length===0){
-cont.innerHTML=`<div class="flex items-center justify-center h-full text-gray-400">🛒 No hay productos en el carrito</div>`;
+let cont = document.getElementById("listaCarrito");
+cont.innerHTML = "";
+
+if(carrito.length === 0){
+cont.innerHTML = `<div class="flex items-center justify-center h-full text-gray-400">🛒 No hay productos en el carrito</div>`;
 actualizarMetricas();
 return;
 }
 
-let subtotal=0;
+let subtotal = 0;
 
-carrito.forEach(p=>{
-subtotal+=p.precio_base*p.cantidad;
-cont.innerHTML+=`
+carrito.forEach(p => {
+
+subtotal += p.precio_base * p.cantidad;
+
+cont.innerHTML += `
 <div class="bg-gray-50 p-4 rounded-xl shadow-sm border">
 <div class="flex justify-between">
 <div>
@@ -292,19 +307,28 @@ x${p.cantidad}</span>
 </p>
 <p class="text-xs text-gray-500">$${p.precio_venta} c/${p.unidad}</p>
 </div>
-<p class="font-bold">$${(p.precio_venta*p.cantidad).toFixed(2)}</p>
+<p class="font-bold">$${(p.precio_venta * p.cantidad).toFixed(2)}</p>
 </div>
 </div>`;
 });
 
-let iva=subtotal*({{$porcentajeIVA}}/100);
-let total=subtotal+iva;
+/* ===== CALCULO CORRECTO DE IMPUESTOS ===== */
 
-document.getElementById("subtotal").innerText="$"+subtotal.toFixed(2);
-document.getElementById("iva").innerText="$"+iva.toFixed(2);
-document.getElementById("total").innerText="$"+total.toFixed(2);
+
+
+let total = Math.round(subtotal * (1 + {{$porcentajeIVA}} / 100));
+let iva = total - subtotal;
+
+
+
+/* ===== MOSTRAR RESULTADOS ===== */
+
+document.getElementById("subtotal").innerText = "$" + subtotal.toFixed(2);
+document.getElementById("iva").innerText = "$" + iva.toFixed(2);
+document.getElementById("total").innerText = "$" + total.toFixed(2);
 
 actualizarMetricas();
+
 }
 
 function actualizarMetricas(){
@@ -721,9 +745,11 @@ function CancelarVenta(){
 
 function actualizarCards(totalVenta, cantidadVendida){
 
+  if (esAdmin){
     let ventasHoy = parseFloat(
         document.getElementById("ventasHoy").innerText.replace('$','')
     );
+}
 
     let productosVendidos = parseInt(
         document.getElementById("productosVendidos").innerText
@@ -733,11 +759,15 @@ function actualizarCards(totalVenta, cantidadVendida){
         document.getElementById("ticketsGenerados").innerText
     );
 
+   if (esAdmin){
     ventasHoy += totalVenta;
+    }
     productosVendidos += cantidadVendida;
     tickets += 1;
-
+ 
+    if (esAdmin){
     document.getElementById("ventasHoy").innerText = "$"+ventasHoy.toFixed(2);
+}
     document.getElementById("productosVendidos").innerText = productosVendidos;
     document.getElementById("ticketsGenerados").innerText = tickets;
 }
@@ -763,6 +793,25 @@ document.addEventListener("change", function(e){
     }
 
 });
+
+document.addEventListener("keydown", function(e){
+
+    // Detectar F1
+    if(e.key === "F10"){
+
+        // 🚫 evitar ayuda del navegador
+        e.preventDefault();
+
+        realizarCobro();
+    }else if (e.key === "F8")
+     {
+        e.preventDefault();
+        ponerEnEspera()
+     }
+
+});
+
+
 
 
 

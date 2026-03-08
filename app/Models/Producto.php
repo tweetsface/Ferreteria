@@ -13,25 +13,28 @@ class Producto extends Model
     public $timestamps = true;
 
     // 🔹 Campos asignables masivamente
-    protected $fillable = [
-        'codigo',
-        'nombre',
-        'id_categoria',
+  protected $fillable = [
 
-        'costo',
-        'precio_base',
-        'precio_venta',
+    'codigo',
+    'nombre',
+    'id_categoria',
+    'id_familia',
 
-        'stock',
-        'stock_minimo',
+    'costo',
+    'precio_base',
+    'precio_venta',
 
-        'unidad',
-        'marca',
+    'id_unidad',
+    'id_clave_sat',
+    'id_unidad_sat',
+    'objeto_impuesto',
 
-        'descripcion',
-        'imagen',
-        'activo',
-    ];
+    'marca',
+    'descripcion',
+    'imagen',
+    'activo',
+
+];
 
     // 🔗 Relación con Categoría
     public function categoria()
@@ -54,5 +57,34 @@ public function getMargenAttribute()
 {
     if ($this->costo <= 0) return 0;
     return (($this->precio_base - $this->costo) / $this->costo) * 100;
+}
+
+public function sucursales()
+{
+    return $this->belongsToMany(
+        Sucursal::class,
+        'producto_sucursal',
+        'id_producto',
+        'id_sucursal'
+    )->withPivot('existencia','stock_minimo','stock_maximo');
+}
+
+public function claveSat()
+{
+    return $this->belongsTo(ClaveProductoSat::class,'id_clave_sat','id_clave_sat');
+}
+
+public function unidadSat()
+{
+    return $this->belongsTo(UnidadSat::class,'id_unidad_sat','id_unidad_sat');
+}
+
+public function unidad()
+{
+    return $this->belongsTo(
+        Unidad::class,
+        'id_unidad',
+        'id_unidad'
+    );
 }
 }

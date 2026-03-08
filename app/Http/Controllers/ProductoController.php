@@ -4,6 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Models\Producto;
 use App\Models\Categoria;
+use App\Models\UnidadSat;
+use App\Models\ClaveProductoSat;
+use App\Models\Familia;
+use App\Models\Proveedor;
+use App\Models\Unidad;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use DB;
@@ -13,31 +18,50 @@ class ProductoController extends Controller
     /**
      * Mostrar listado
      */
-    public function index(Request $request)
+   public function index(Request $request)
 {
-    $query = Producto::with('categoria');
 
-    if ($request->buscar) {
-        $query->where(function ($q) use ($request) {
-            $q->where('codigo', 'like', "%{$request->buscar}%")
-              ->orWhere('nombre', 'like', "%{$request->buscar}%");
-        });
-    }
+$query = Producto::with('categoria');
 
-    if ($request->categoria) {
-        $query->where('id_categoria', $request->categoria);
-    }
-
-    if ($request->estado !== null && $request->estado !== '') {
-        $query->where('activo', $request->estado);
-    }
-
-    $productos = $query->paginate(10)->withQueryString();
-    $categorias = Categoria::all();
-
-    return view('productos', compact('productos', 'categorias'));
+if ($request->buscar) {
+    $query->where(function ($q) use ($request) {
+        $q->where('codigo', 'like', "%{$request->buscar}%")
+          ->orWhere('nombre', 'like', "%{$request->buscar}%");
+    });
 }
 
+if ($request->categoria) {
+    $query->where('id_categoria', $request->categoria);
+}
+
+if ($request->estado !== null && $request->estado !== '') {
+    $query->where('activo', $request->estado);
+}
+
+$productos = $query->paginate(10)->withQueryString();
+
+$unidades = UnidadSat::orderBy('nombre')->get();
+
+$clavesSat = ClaveProductoSat::orderBy('descripcion')->get();
+
+$categorias = Categoria::orderBy('nombre')->get();
+
+$familias = Familia::orderBy('nombre')->get();
+
+$proveedores = Proveedor::orderBy('nombre')->get();
+
+$unidadesVenta = Unidad::orderBy('nombre')->get();
+
+return view('productos', compact(
+'productos',
+'categorias',
+'unidades',
+'clavesSat',
+'familias',
+'proveedores',
+'unidadesVenta'));
+
+}
     /**
      * Guardar nuevo producto
      */
@@ -47,13 +71,19 @@ public function store(Request $request)
         'codigo'        => 'required|unique:productos,codigo',
         'nombre'        => 'required|string|max:255',
         'id_categoria'  => 'nullable|exists:categorias,id_categoria',
+        'id_familia'    => 'nullable|exists:familias,id_familia',
+
+        'id_clave_sat'  => 'required|exists:claves_productos_sat,id_clave_sat',
+        'id_unidad_sat' => 'required|exists:unidades_sat,id_unidad_sat',
+
         'costo'         => 'required|numeric|min:0',
         'precio_venta'  => 'required|numeric|min:0',
-        'unidad'        => 'required|string|max:50',
+
         'marca'         => 'nullable|string|max:100',
         'descripcion'   => 'nullable|string',
         'imagen'        => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         'activo'        => 'nullable|boolean',
+        'id_proveedor'  => 'nullable|exists:proveedores,id_proveedor'
     ]);
 
     // 🔥 Obtener IVA desde configuración
@@ -61,19 +91,12 @@ public function store(Request $request)
                 ->where('clave', 'iva')
                 ->value('valor') ?? 16;
 
-    $costo = $request->costo;
-    $precioVenta = $request->precio_venta;
+    // 🔹 Redondear valores capturados
+    $costo = round($request->costo, 2);
+    $precioVenta = round($request->precio_venta, 2);
 
-    // 🔹 Calcular precio sin IVA
-    $precioBase = $precioVenta / (1 + ($iva / 100));
-
-    // 🔹 Calcular utilidad real
-    $utilidad = $precioBase - $costo;
-
-    // 🔹 Calcular margen %
-    $margen = $costo > 0 
-        ? ($utilidad / $costo) * 100 
-        : 0;
+    // 🔹 Calcular precio sin IVA correctamente
+    $precioBase = round($precioVenta / (1 + ($iva / 100)), 2);
 
     $rutaImagen = null;
 
@@ -82,34 +105,48 @@ public function store(Request $request)
                               ->store('productos', 'public');
     }
 
-    Producto::create([
+    // 🔹 Crear producto
+    $producto = Producto::create([
         'codigo'        => $request->codigo,
         'nombre'        => $request->nombre,
         'id_categoria'  => $request->id_categoria,
+        'id_familia'    => $request->id_familia,
+
         'costo'         => $costo,
-        'precio_base'   => round($precioBase, 2),
-        'precio_venta'  => round($precioVenta, 2),
-        'unidad'        => $request->unidad,
+        'precio_base'   => $precioBase,
+        'precio_venta'  => $precioVenta,
+
+        'id_unidad'     => $request->id_unidad,
+
+        // SAT
+        'id_clave_sat'  => $request->id_clave_sat,
+        'id_unidad_sat' => $request->id_unidad_sat,
+        'objeto_impuesto' => $request->objeto_impuesto ?? '02',
+
         'marca'         => $request->marca,
         'descripcion'   => $request->descripcion,
         'imagen'        => $rutaImagen,
         'activo'        => $request->activo ?? true,
     ]);
 
+    // 🔹 Obtener sucursal del usuario logueado
+    $idSucursal = auth()->user()->id_sucursal;
+
+    // 🔹 Crear inventario inicial para esa sucursal
+    DB::table('producto_sucursal')->insert([
+        'id_producto'  => $producto->id_producto,
+        'id_sucursal'  => $idSucursal,
+        'existencia'   => 0,
+        'stock_minimo' => 5,
+        'stock_maximo' => 100,
+        'created_at'   => now(),
+        'updated_at'   => now(),
+    ]);
+
     return redirect()
         ->route('producto.index')
         ->with('success', 'Producto registrado correctamente.');
 }
-    /**
-     * Mostrar formulario edición
-     */
-    public function edit($id)
-    {
-        $producto = Producto::findOrFail($id);
-        $categorias = Categoria::where('estado', true)->get();
-
-        return view('productos_edit', compact('producto', 'categorias'));
-    }
 
 
 public function update(Request $request, $id)

@@ -20,6 +20,17 @@ return new class extends Migration
             $table->decimal('precio_unitario', 10, 2);
             $table->decimal('subtotal', 10, 2);
 
+            // 🔹 CAMPOS NECESARIOS PARA FACTURACIÓN
+            $table->decimal('iva', 10, 2)->default(0);
+            $table->decimal('total', 10, 2);
+
+            $table->string('clave_sat',20)->nullable();
+            $table->string('clave_unidad_sat',10)->nullable();
+            $table->string('unidad_sat',50)->nullable();
+            $table->string('descripcion')->nullable();
+
+            $table->string('objeto_impuesto',2)->default('02');
+
             $table->timestamps();
 
             // 🔥 FOREIGN KEYS
@@ -35,13 +46,6 @@ return new class extends Migration
         });
     }
 
-
-
-    /**
-     * Reverse the migrations.
-     *
-     * @return void
-     */
     public function down()
     {
         Schema::dropIfExists('detalle_ventas');

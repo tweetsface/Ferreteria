@@ -14,8 +14,10 @@ return new class extends Migration
 
             $table->string('nombre', 100)->unique(); // nombre único
             $table->string('descripcion')->nullable();
-
             $table->boolean('estado')->default(true); 
+            $table->unsignedBigInteger('id_familia')->default(1);
+            $table->foreign('id_familia')->references('id_familia')->on('familias')
+             ->onDelete('restrict');
             // true = activa
             // false = inactiva
 

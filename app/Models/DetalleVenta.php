@@ -6,19 +6,29 @@ use Illuminate\Database\Eloquent\Model;
 
 class DetalleVenta extends Model
 {
-    protected $table = 'detalle_ventas';
+    
+protected $table = 'detalle_ventas';
+protected $primaryKey = 'id_detalle_venta';
 
-    protected $primaryKey = 'id_detalle_venta';
-    public $incrementing = true;
-    protected $keyType = 'int';
+protected $fillable = [
 
-    protected $fillable = [
-        'id_venta',
-        'id_producto',
-        'cantidad',
-        'precio_unitario',
-        'subtotal'
-    ];
+'id_venta',
+'id_producto',
+
+'cantidad',
+'precio_unitario',
+'subtotal',
+'iva',
+'total',
+
+// 🔹 CAMPOS SAT
+'clave_sat',
+'clave_unidad_sat',
+'unidad_sat',
+'descripcion',
+'objeto_impuesto'
+
+];
 
     /*
     |--------------------------------------------------------------------------

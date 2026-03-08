@@ -11,6 +11,7 @@ class Categoria extends Model
 
     protected $fillable = [
         'nombre',
+        'id_familia',
         'estado',
     ];
 
@@ -29,4 +30,9 @@ class Categoria extends Model
     {
         return $this->hasMany(Producto::class, 'id_categoria', 'id_categoria');
     }
+
+    public function familia()
+{
+    return $this->belongsTo(Familia::class,'id_familia');
+}
 }
